@@ -6,25 +6,25 @@ import { pool } from "./db.js";
 
 const app = express();
 
-// Configuración de CORS para producción
+// ===== CONFIGURACIÓN CORS CORREGIDA =====
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:8000',
-    'http://localhost:5173',
-    'https://sistema-academico-taupe.vercel.app',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true,
+  origin: '*',  // Permite todas las solicitudes (para desarrollo)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
 }));
 
 app.use(express.json());
 
+// Middleware para logging (útil para debugging)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 // Ruta de prueba
 app.get("/", (req, res) => {
-  res.json({ msg: "API Sistema Académico funcionando correctamente" });
+  res.json({ msg: "API funcionando correctamente" });
 });
 
 // =====================
@@ -52,6 +52,7 @@ app.post("/login", async (req, res) => {
     delete usuario.clave; 
     res.json({ msg: "Bienvenido", usuario });
   } catch (error) {
+    console.error("Error en login:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -367,7 +368,9 @@ app.delete("/notas/:id", async (req, res) => {
   }
 });
 
+// SERVIDOR
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
 
 
