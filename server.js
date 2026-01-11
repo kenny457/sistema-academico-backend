@@ -8,8 +8,16 @@ const app = express();
 
 // Configuración de CORS para producción
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://localhost:5173',
+    'https://sistema-academico-taupe.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -362,3 +370,4 @@ app.delete("/notas/:id", async (req, res) => {
 // SERVIDOR
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
