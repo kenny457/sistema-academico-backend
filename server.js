@@ -6,25 +6,31 @@ import { pool } from "./db.js";
 
 const app = express();
 
-// ===== CONFIGURACIÓN CORS CORREGIDA =====
+// ===== CONFIGURACIÓN CORS - MUY IMPORTANTE =====
+// Esto permite que tu frontend en Vercel se conecte al backend
 app.use(cors({
-  origin: '*',  // Permite todas las solicitudes (para desarrollo)
+  origin: '*',  // Permite todos los orígenes
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }));
 
+// Middleware para parsear JSON
 app.use(express.json());
 
-// Middleware para logging (útil para debugging)
+// Middleware para logging (ayuda a debuggear)
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// Ruta de prueba
+// ===== RUTA DE PRUEBA =====
 app.get("/", (req, res) => {
-  res.json({ msg: "API funcionando correctamente" });
+  res.json({ 
+    msg: "API funcionando correctamente",
+    timestamp: new Date().toISOString(),
+    endpoints: ["/login", "/usuarios", "/materias", "/estudiantes", "/notas"]
+  });
 });
 
 // =====================
@@ -33,8 +39,13 @@ app.get("/", (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
+    console.log("Login attempt:", req.body);
     const { cedula, clave } = req.body;
     
+    if (!cedula || !clave) {
+      return res.status(400).json({ msg: "Cédula y contraseña son requeridas" });
+    }
+
     const query = "SELECT * FROM usuarios WHERE cedula = $1";
     const result = await pool.query(query, [cedula]);
 
@@ -50,6 +61,7 @@ app.post("/login", async (req, res) => {
     }
 
     delete usuario.clave; 
+    console.log("Login successful:", usuario.cedula);
     res.json({ msg: "Bienvenido", usuario });
   } catch (error) {
     console.error("Error en login:", error);
@@ -87,7 +99,7 @@ app.get("/usuarios/:id", async (req, res) => {
 
 app.get("/usuarios", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM usuarios ORDER BY id ASC");
+    const result = await pool.query("SELECT id, cedula, nombre FROM usuarios ORDER BY id ASC");
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -368,9 +380,24 @@ app.delete("/notas/:id", async (req, res) => {
   }
 });
 
-// SERVIDOR
+// ===== MANEJO DE RUTAS NO ENCONTRADAS =====
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: "Ruta no encontrada",
+    path: req.path,
+    method: req.method
+  });
+});
+
+// ===== INICIAR SERVIDOR =====
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`=================================`);
+  console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+  console.log(`🕐 Iniciado: ${new Date().toISOString()}`);
+  console.log(`=================================`);
+});
+
 
 
 
